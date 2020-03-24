@@ -47,36 +47,63 @@ func ReadCSV(path *string) ([]byte, string) {
 	content = content[1:]
 
 	var buffer bytes.Buffer
+	var nuBuffer *bytes.Buffer
+	var nuBytes []byte
 	buffer.WriteString("[")
+	//for i, d := range content {
 	for i, d := range content {
 		buffer.WriteString("{")
+
 		for j, y := range d {
-			buffer.WriteString(`"` + headersArr[j] + `":`)
-			_, fErr := strconv.ParseFloat(y, 32)
-			_, bErr := strconv.ParseBool(y)
-			if fErr == nil {
-				buffer.WriteString(y)
-			} else if bErr == nil {
-				buffer.WriteString(strings.ToLower(y))
-			} else {
-				buffer.WriteString((`"` + y + `"`))
-			}
-			//end of property
-			if j < len(d)-1 {
-				buffer.WriteString(",")
+			if len(y) > 0 {
+
+				_, fErr := strconv.ParseFloat(y, 32)
+				_, bErr := strconv.ParseBool(y)
+
+				buffer.WriteString(`"` + headersArr[j] + `":`)
+
+				if fErr == nil {
+					buffer.WriteString(y)
+				} else if bErr == nil {
+					buffer.WriteString(strings.ToLower(y))
+				} else {
+					if len(y) > 0 {
+						buffer.WriteString((`"` + y + `"`))
+					}
+				}
+
+				if j < len(d) {
+					buffer.WriteString(",")
+				}
 			}
 
 		}
-		//end of object of the array
-		buffer.WriteString("}")
+
+		nuBytes = bytes.TrimSuffix(buffer.Bytes(), []byte(","))
+
+		//nuBuffer.WriteTo(os.Stdout)
+
 		if i < len(content)-1 {
 			buffer.WriteString(",")
 		}
+
+		//end of object of the array
+		nuBuffer = bytes.NewBuffer(nuBytes)
+		nuBuffer.WriteString("}")
+
 	}
 
-	buffer.WriteString(`]`)
-	rawMessage := json.RawMessage(buffer.String())
-	x, _ := json.MarshalIndent(rawMessage, "", "  ")
+	//delete the last comma
+	nuBytes = bytes.TrimSuffix(buffer.Bytes(), []byte(","))
+	nuBuffer = bytes.NewBuffer(nuBytes)
+	nuBuffer.WriteString(`]`)
+
+	rawMessage := json.RawMessage(nuBuffer.String())
+	x, err := json.MarshalIndent(rawMessage, "", "  ")
+
+	if err != nil {
+		fmt.Println(err)
+	}
 	newFileName := filepath.Base(*path)
 	newFileName = newFileName[0:len(newFileName)-len(filepath.Ext(newFileName))] + ".json"
 	r := filepath.Dir(*path)
