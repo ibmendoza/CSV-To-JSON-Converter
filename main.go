@@ -90,7 +90,6 @@ func ReadCSV(path *string) ([]byte, string) {
 		//end of object of the array
 		nuBuffer = bytes.NewBuffer(nuBytes)
 		nuBuffer.WriteString("}")
-
 	}
 
 	//delete the last comma
